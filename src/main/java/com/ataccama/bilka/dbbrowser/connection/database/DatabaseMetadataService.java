@@ -16,7 +16,7 @@ import com.ataccama.bilka.dbbrowser.connection.Connection;
 
 
 /**
- * Class to retrieve basic metadata (tables. columns) for give connection {@link Connection}}
+ * Class to retrieve basic metadata (tables, columns) for given connection {@link Connection}}
  * 
  */
 @Service
@@ -90,7 +90,7 @@ public class DatabaseMetadataService {
 	}
 	
 	/**
-	 * Get columns and associated basic metadata for given table and {@link Connection}.
+	 * Get tables for given {@link Connection}.
 	 * 
 	 * @param connection
 	 * @param table
