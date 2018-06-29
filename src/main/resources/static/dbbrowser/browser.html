@@ -1,0 +1,225 @@
+<!doctype html>
+  <head>
+    <meta charset="utf-8">
+    <title>DB Browser</title>
+    <link rel="stylesheet" media="screen" href="vendor/css/bootstrap.css" />
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link rel="stylesheet" media="screen" href="vendor/css/bootstrap-responsive.css" />
+    <link rel="stylesheet" media="screen" href="styles.css" />
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="brand" href="#/">DB Browser</a>
+        </div>
+      </div>
+    </div>
+
+    <div id="browser" class="container-fluid"></div>
+
+
+	<script id="connections-template" type="text/template">
+    <h2>Connections</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Hostname</th>
+          <th>Port</th>
+          <th>Database name</th>
+          <th>Username</th>
+          <th>Browse db</th>
+          <th>Connection</th>
+       </tr>
+      </thead>
+      <tbody>
+	  <% if(typeof resources.embeddedResources != undefined) { %>  	
+      <% _.each(resources.embeddedResources.connections, function(connection, rel) { %>
+         <tr>
+            <td><%= connection.get("name") || '' %></td>
+            <td><%= connection.get("hostname") || '' %></td>
+            <td><%= connection.get("port") || '' %></td>
+            <td><%= connection.get("databaseName") || '' %></td>
+            <td><%= connection.get("username") || '' %></td>
+            <td><a class="follow btn btn-success" href="<%= HAL.normalizeUrl(connection.links.tables.href) %>" title="Follow link"><i class="icon-arrow-right"></i></a></td>
+			<td>
+                <a class="non-get btn btn-warning delete" href="<%= HAL.normalizeUrl(connection.links.self.href) %>" title="Delete">Delete</a>
+                <a class="non-get btn btn-primary update" href="<%= HAL.normalizeUrl(connection.links.self.href) %>" title="Update">Update</a>
+             </td>
+          </tr>
+      <% }) %>
+	  <% } %>
+      </tbody>
+	  <div>
+		<td>
+           <a class="non-get btn btn-primary add" href="<%= HAL.normalizeUrl(resources.links.self.href) %>" title="Add Connection">Add Connection</a>
+         </td>
+	  </div>
+		
+
+    </table>
+  </script>
+
+
+  <script id="tables-template" type="text/template">
+
+	<h3><a class="follow btn btn-primary" href="<%= HAL.normalizeUrl(tables.links.allConnections.href) %>" title="Follow link">Back to connection list</a><h3>
+    <h2>Tables</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Table</th>
+		  <th></th>
+      </thead>
+      <tbody>
+      <% _.each(tables.embeddedResources.tables, function(obj) { %>
+         <tr>
+            <td><%= obj.get("table") || '' %></td>
+ 			<td><a class="follow btn btn-success" href="<%= HAL.normalizeUrl(obj.links.self.href) %>" title="Follow link"><i class="icon-arrow-right"></i></a></td>
+          </tr>
+      <% }) %>
+      </tbody>
+    </table>
+  </script>
+
+  <script id="columns-template" type="text/template">
+
+	<h3><a class="follow btn btn-primary" href="<%= HAL.normalizeUrl(columns.links.allTables.href) %>" title="Follow link">Back to table list</a></h3>
+    <h2>Columns for table <%= tableName || '' %></h2>
+	<h3><a class="follow btn btn-success" href="<%= HAL.normalizeUrl(columns.links.data.href) %>" title="Follow link">Show Data Preview</a></h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Columns</th>
+		  <th>Primary Key</th>
+		  <th>Type Name</th>
+		  <th>Autoincrement</th>
+		  <th>Nullable</th>
+      </thead>
+      <tbody>
+      <% _.each(columns.embeddedResources.columns, function(obj) { %>
+         <tr>
+            <td><%= obj.get("columnName") || '' %></td>
+            <td><%= obj.get("isPrimaryKey") || '' %></td>
+            <td><%= obj.get("typeName") || '' %></td>
+            <td><%= obj.get("isAutoincrement") || '' %></td>
+            <td><%= obj.get("isNullable") || '' %></td>
+          </tr>
+      <% }) %>
+      </tbody>
+    </table>
+  </script>
+
+  <script id="data-template" type="text/template">
+	
+	<h3><a class="follow btn btn-primary" href="<%= HAL.normalizeUrl(data.links.allColumns.href) %>" title="Follow link">Back to columns list</a><h3>
+    <h2>Data preview for table '<%= data.get("table") || '' %>'</h2>
+    <table class="table">
+      <thead>
+         <tr>
+	  		<% _.each(data.get("columns"), function(obj) { %>
+               <th> <%=  obj || '' %> </th>
+      		<% }) %>
+          </tr>
+      </thead>
+      <tbody>
+		<% _.each(data.get("data"), function(row) { %>
+         <tr>
+			<% _.each(row, function(element) { %>
+            <td><%= element || '' %></td>
+			<% }) %>
+          </tr>
+      <% }) %>
+      </tbody>
+    </table>
+	  </script>
+
+
+  <script id="add-connection-template" type="text/template">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h3><%= type == 'update' ? 'Update connection' : 'Add new connection' %></h3>
+    </div>
+
+    <form class="non-safe" action="<%= href %>">
+      <div class="modal-body">
+        <p>Name your connection (serves as a label):</p>
+        <input name="name" type="text" class="name" value="<%= type == 'update' ? connectionData.name : '' %>" />
+		<p>Hostname:</p>
+		<input name="hostname" type="text" class="hostname" value="<%= type == 'update' ? connectionData.hostname : 'localhost' %>" />
+		<p>Port:</p>
+		<input name="port" type="text" class="port" value="<%= type == 'update' ? connectionData.port : '3306' %>" />
+		<p>Database Name:</p>
+		<input name="databaseName" type="text" class="databaseName" value="<%= type == 'update' ? connectionData.databaseName : '' %>" />
+		<p>Username:</p>
+		<input name="username" type="text" class="username" value="<%= type == 'update' ? connectionData.username : '' %>" />
+		<p>Password:</p>
+		<input name="password" type="text" class="password" value="<%= type == 'update' ? connectionData.password : '' %>" />
+		<button type="submit" class="btn btn-primary" style="float:right">Make Request</button>		
+      </div>
+
+    </form>
+  </script>
+
+  <script id="delete-connection-template" type="text/template">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h3>Delete connection</h3>
+    </div>
+
+    <form class="non-safe" action="<%= href %>">
+      	<div class="modal-body">
+			<p>Do you really want to delete the connection ?</p>
+			<button type="submit" class="btn btn-primary" style="float:right">Make Request</button>
+		</div>
+      
+    </form>
+  </script>
+
+
+  <script src="vendor/js/jquery-1.10.2.min.js"></script>
+  <script src="vendor/js/underscore.js"></script>
+  <script src="vendor/js/backbone.js"></script>
+  <script src="vendor/js/uritemplates.js"></script>
+  <script src="vendor/js/URI.min.js"></script>
+  <script src="vendor/js/bootstrap.js"></script>
+
+  <script src="js/hal.js"></script>
+  <script src="js/hal/browser.js"></script>
+
+  <script src="js/hal/http/client.js"></script>
+  <script src="js/hal/resource.js"></script>
+
+  <script src="js/hal/views/browser.js"></script>
+  <script src="js/hal/views/explorer.js"></script>
+
+  <script src="js/hal/views/navigation.js"></script>
+
+  <script src="js/hal/views/connections.js"></script>
+  <script src="js/hal/views/tables.js"></script>
+  <script src="js/hal/views/columns.js"></script>
+  <script src="js/hal/views/tableData.js"></script>
+
+  <script src="js/hal/views/add_connection_dialog.js"></script>
+  <script src="js/hal/views/delete_connection_dialog.js"></script>
+
+
+  <script>
+    var browser = new HAL.Browser({
+      container: $('#browser'),
+      entryPoint: '/'
+    });
+    Backbone.history.start();
+  </script>
+</body>
