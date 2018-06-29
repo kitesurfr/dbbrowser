@@ -44,7 +44,7 @@
        </tr>
       </thead>
       <tbody>
-	  <% if(typeof resources.embeddedResources != undefined) { %>  	
+	  <% if(typeof resources.embeddedResources != 'undefined') { %>  	
       <% _.each(resources.embeddedResources.connections, function(connection, rel) { %>
          <tr>
             <td><%= connection.get("name") || '' %></td>
